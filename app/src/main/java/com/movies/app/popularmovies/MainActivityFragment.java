@@ -1,11 +1,13 @@
 package com.movies.app.popularmovies;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.media.tv.TvContract;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.widget.ContentLoadingProgressBar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -113,6 +115,7 @@ public class MainActivityFragment extends Fragment {
 
     class FetchMovieTask extends AsyncTask<String,Void,MovieObject[]>
     {
+        ContentLoadingProgressBar progressBar=new ContentLoadingProgressBar(getContext());
         MovieObject [] movieObjects=null;
    //     String []str=null;
 
@@ -129,9 +132,6 @@ public class MainActivityFragment extends Fragment {
 
         @Override
         protected MovieObject[] doInBackground(String... strings) {
-
-
-
             final String movieBaseUrl="http://api.themoviedb.org/3/discover/movie?";
             String api_key=getString(R.string.api_key);
             String API_PARAM="api_key";
@@ -139,12 +139,15 @@ public class MainActivityFragment extends Fragment {
             String YEAR_PARAM="primary_release_year";
             String year="2015";
             String type=strings[0];
+            String TYPE_VOTE_COUNT="vote_count.gte";
+            String voteCount="50";
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
             String movieJSONStr = null;
             try {
 
-                Uri buildUri=Uri.parse(movieBaseUrl).buildUpon().appendQueryParameter(YEAR_PARAM,year).appendQueryParameter(TYPE_PARAM,type).appendQueryParameter(API_PARAM,api_key).build();
+                Uri buildUri=Uri.parse(movieBaseUrl).buildUpon().appendQueryParameter(YEAR_PARAM,year).appendQueryParameter(TYPE_VOTE_COUNT,voteCount).appendQueryParameter(TYPE_PARAM,type).appendQueryParameter("vote_count","1000").appendQueryParameter(API_PARAM,api_key).build();
+                Log.v("URL",buildUri.toString());
                 URL url=new URL(buildUri.toString());
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -180,6 +183,8 @@ public class MainActivityFragment extends Fragment {
                     movieObjects[i].poster_path=jsonObject.optString("poster_path").toString();
                     movieObjects[i].release_date = jsonObject.getString("release_date").toString();
                     movieObjects[i].vote_average=jsonObject.getString("vote_average").toString();
+                    movieObjects[i].backdrop_path=jsonObject.getString("backdrop_path").toString();
+                    movieObjects[i].id=jsonObject.getString("id").toString();
                 }
 
             } catch (MalformedURLException e) {

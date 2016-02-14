@@ -11,6 +11,8 @@ public class MovieObject implements Serializable{
     String release_date;
     String vote_average;
     String poster_path;
+    String backdrop_path;
+    String id;
 
     public MovieObject(){}
     public MovieObject(String poster_path)

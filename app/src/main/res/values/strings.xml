@@ -4,5 +4,12 @@
     <string name="action_popular">Popular</string>
     <string name="action_top_rated">Top Rated</string>
     <string name="title_activity_detail">Movie Detail</string>
-    <string name="api_key"></string>
+    <string name="api_key">69323240f26aaa3f0ed513e2fd344a5f</string>
+    <string name="backdrop_image">Backdrop Image</string>
+    <string name="Overview">Overview</string>
+    <string name="Review">Review</string>
+    <string name="Trailers">Trailer</string>
+    <string name="AddFav">Added To Favourites</string>
+    <string name="RmvFav">Removed From Favourites</string>
+    <string name="action_share">Share</string>
 </resources>
