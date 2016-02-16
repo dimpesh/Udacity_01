@@ -1,6 +1,7 @@
 package com.movies.app.popularmovies;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -9,6 +10,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -25,6 +28,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -32,7 +37,8 @@ import java.util.List;
  */
 public class DetailActivityFragment extends Fragment {
     String baseUrlImage="http://image.tmdb.org/t/p/w185/";
- //   TrailerAdapter trailerAdapter;
+    TrailerAdapter myTrailerAdapter;
+    TrailerObject[] trailerObjects;
     List<String> trailerKeyList;
     String LOG_TAG= DetailActivityFragment.class.getSimpleName();
     String MyAppString = "#SpotifyStreamer";
@@ -55,9 +61,12 @@ public class DetailActivityFragment extends Fragment {
    //     trailerAdapter=new TrailerAdapter(getActivity(),R.layout.list_item_trailer,R.id.trailer_image,trailerKeyList);
         FloatingActionButton updateFavouriteButton= (FloatingActionButton) rootView.findViewById(R.id.favbtn);
         // Trailer Object Populate the Trailer ListView
+        trailerObjects= new TrailerObject[]{new TrailerObject(), new TrailerObject()};
+
+        List<TrailerObject> listmovie=new ArrayList<TrailerObject>(Arrays.asList(trailerObjects));
+        myTrailerAdapter=new TrailerAdapter(getActivity(),R.layout.trailer_item_imageview,R.id.gridview_movies_imageview,listmovie);
 
 
-       // videos?api_key=69323240f26aaa3f0ed513e2fd344a5f
         MovieObject movieRecieved= (MovieObject) bundle.getSerializable("MovieObjectSent");
         ImageView movieBackdrop= (ImageView) rootView.findViewById(R.id.movie_backdrop);
         ImageView moviePoster= (ImageView) rootView.findViewById(R.id.movie_poster);
@@ -70,6 +79,18 @@ public class DetailActivityFragment extends Fragment {
        // new TrailerFetcher().execute(movieRecieved.id);
    //     new TrailerFetcher().execute(movieRecieved.id);
 
+        GridView trailerview= (GridView) rootView.findViewById(R.id.gridview_trailersview);
+        trailerview.setAdapter(myTrailerAdapter);
+
+
+        trailerview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                TrailerObject trailerObject=myTrailerAdapter.getItem(position);
+                String key=trailerObject.getKey();
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.youtube.com/watch?v=" + key)));
+            }
+        });
 
         TextView overview= (TextView) rootView.findViewById(R.id.movie_overview);
 
@@ -85,6 +106,7 @@ public class DetailActivityFragment extends Fragment {
 
 
     }
+
     public class DataFetcher extends AsyncTask<String,Void,String>
     {
         String LOG_TAG= DataFetcher.class.getSimpleName();
@@ -94,7 +116,7 @@ public class DetailActivityFragment extends Fragment {
         String reviewStr="";
         String movie_id;
         BufferedReader reader=null;
-       // String baseUrl="https://api.themoviedb.org/3/movie/286217/";
+        // String baseUrl="https://api.themoviedb.org/3/movie/286217/";
         HttpURLConnection urlConnection;
 
         @Override
@@ -102,6 +124,7 @@ public class DetailActivityFragment extends Fragment {
         {
 
             reviewView.setText(str);
+            new TrailerFetcher().execute(movie_id);
         }
 
         @Override
@@ -110,7 +133,7 @@ public class DetailActivityFragment extends Fragment {
             try {
                 movie_id=strings[0];
                 URL url=new URL("https://api.themoviedb.org/3/movie/"+strings[0]+"/reviews?api_key=69323240f26aaa3f0ed513e2fd344a5f");
-               Log.v(LOG_TAG+"VERBOSE",url.toString());
+                Log.v(LOG_TAG+"VERBOSE",url.toString());
                 urlConnection=(HttpURLConnection)url.openConnection();
                 urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
@@ -164,75 +187,68 @@ public class DetailActivityFragment extends Fragment {
         }
     }
 
-
-    public class TrailerFetcher extends AsyncTask<String,Void,String>
-    {
-        String LOG_TAG= DataFetcher.class.getSimpleName();
-        String API_KEY="api_key";
+    public class TrailerFetcher extends AsyncTask<String, Void, TrailerObject[]> {
+        String LOG_TAG = TrailerFetcher.class.getSimpleName();
+        String API_KEY = "api_key";
         String jsonStr;
-        String myTrailer="";
-        String []trailer_key=null;
-        BufferedReader reader=null;
+        String myTrailer = "";
+        //        String []trailer_key=null;
+        BufferedReader reader = null;
         // String baseUrl="https://api.themoviedb.org/3/movie/286217/";
         HttpURLConnection urlConnection;
 
         @Override
-        protected void onPostExecute(String str)
-        {
-            trailer_string=str;
+        protected void onPostExecute(TrailerObject[] str) {
+
+            if (str != null)
+                myTrailerAdapter.clear();
+
+            myTrailerAdapter.addAll(str);
+            myTrailerAdapter.notifyDataSetChanged();
         }
 
         @Override
-        protected String doInBackground(String...strings) {
-            //Uri buildUrl=Uri.parse(baseUrl+strings[0]).buildUpon().appendQueryParameter(API_KEY, getString(R.string.api_key)).build();
+        protected TrailerObject[] doInBackground(String... strings) {
             try {
-                URL url=new URL("https://api.themoviedb.org/3/movie/"+strings[0]+"/videos?api_key=69323240f26aaa3f0ed513e2fd344a5f");
-                Log.v(LOG_TAG+"VERBOSE",url.toString());
-                urlConnection=(HttpURLConnection)url.openConnection();
+                URL url = new URL("https://api.themoviedb.org/3/movie/"+strings[0]+"/videos?api_key=69323240f26aaa3f0ed513e2fd344a5f");
+                Log.v(LOG_TAG + "VERBOSE", url.toString());
+                urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
 
-                InputStream inputStream=urlConnection.getInputStream();
-                StringBuffer buffer=new StringBuffer();
-                if(inputStream==null)
-                    jsonStr=null;
+                InputStream inputStream = urlConnection.getInputStream();
+                StringBuffer buffer = new StringBuffer();
+                if (inputStream == null)
+                    jsonStr = null;
 
-                reader=new BufferedReader(new InputStreamReader(inputStream));
+                reader = new BufferedReader(new InputStreamReader(inputStream));
 
                 String line;
-                while((line=reader.readLine())!=null)
-                {
-                    buffer.append(line+"\n");
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line + "\n");
                 }
-                if(buffer.length()==0)
-                {
-                    jsonStr=null;
+                if (buffer.length() == 0) {
+                    jsonStr = null;
                 }
-                jsonStr=buffer.toString();
-                JSONObject trailerObject=new JSONObject(jsonStr);
-                JSONArray jsonArray =trailerObject.getJSONArray("results");
-                trailer_key=new String[jsonArray.length()];
-                for(int i=0;i<jsonArray.length();i++) {
-                    trailer_key[i]=new String();
-                    JSONObject trailer_key_object = jsonArray.getJSONObject(i);
+                jsonStr = buffer.toString();
+                JSONObject trailerObject = new JSONObject(jsonStr);
+                Log.v("VERBOSE",trailerObject.toString());
+                JSONArray jsonArray = trailerObject.getJSONArray("results");
+                trailerObjects = new TrailerObject[jsonArray.length()];
+                for (int i = 0; i < jsonArray.length(); i++)
+                {
+                    trailerObjects[i] = new TrailerObject();
+                    JSONObject jsonArrayJSONObject = jsonArray.getJSONObject(i);
                     //JSONObject authorObject=review.getJSONObject("author");
-                    String key=trailer_key_object.getString("key");
-                    myTrailer=myTrailer+"\n"+key;
+                    trailerObjects[i].id = jsonArrayJSONObject.getString("id");
+                    Log.v("ID VERBOSE",jsonArrayJSONObject.getString("key"));
+                    trailerObjects[i].key = jsonArrayJSONObject.getString("key");
+                    trailerObjects[i].name = jsonArrayJSONObject.getString("name");
 
-                    Log.v("\nTRAILER URL",key);
-                    //JSONObject contentObject=review.getJSONObject("content");
-//                    String content=review.getString("content").toString();
-//                    Log.v("\ncontent JSON ",authorName);
 
-                  //  trailer_key[i]=key;
                 }
-//                for(String s: trailer_key)
-//                Log.v(LOG_TAG,s);
 
-
-
-            }
-            catch (MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -240,13 +256,10 @@ public class DetailActivityFragment extends Fragment {
                 e.printStackTrace();
             }
 
-            Log.v("MY TRAILER",myTrailer);
-            return myTrailer;
-
-
-
+            return trailerObjects;
         }
     }
+
 
 
 }
